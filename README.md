@@ -15,8 +15,8 @@ Workbench Development is a new paradigm, which puts the developer as a leader of
 
 ### What is Agentic Workbench MCP?
 
-Agentic Workbench MCP (AgenticBench) is a server built on OpenAI's Codex, and connects it to an AI client like Cursor via MCP, and connects recursively to itself via MCPs. 
-It is built on OpenAI's Responses API, and works with local and hosted models to give developers full control and privacy over their models and code. 
+Agentic Workbench MCP (AgenticBench) is a server built on OpenAI's Codex, and connects it to an AI client like Cursor via MCP, and connects recursively to itself via MCPs.  
+It is built on OpenAI's Responses API, and works with local and hosted models to give developers full control and privacy over their models and code.  
 AgenticBench allows tailoring environments for each agent to create their components with the highest, repeatable accuracy. 
 
 ## Design
@@ -38,14 +38,14 @@ AgenticBench allows tailoring environments for each agent to create their compon
 
 ### Step 2 - Prepare "workbenches"
 
-Workbenches are predefined folders with basic projects. Each has the most empty, unchanging structure, which would give Codex an environment in which we create similar components. (Web app components, C# service classes, etc.)
- Since the environment never changes, the prompts can be static and give the same results.
+Workbenches are predefined folders with basic projects.   Each has the most empty, unchanging structure, which would give Codex an environment in which we create similar components. (Web app components, C# service classes, etc.).  
+ Since the environment never changes, the prompts can be static and give the same results.  
 Each component is tested in this sterile environment and committed to a branch.
 
 ### Step 3 - Connect recursively 
 
-Each Codex pipeline is connected to Codex via MCP.
-Components are built “bottom up” and the caller AI Agent works on merging them.
+Each Codex pipeline is connected to Codex via MCP.  
+Components are built “bottom up” and the caller AI Agent works on merging them.  
 
 In case of an issue, the developer can review the prepare components, change them, and continue from where they stopped.
 

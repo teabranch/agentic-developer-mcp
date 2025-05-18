@@ -1,8 +1,8 @@
-# Agentic Workbench Mcp (AgenticBench)
+# Agentic Developer Mcp
 
 ## Table of contents
 
-- What is AgenticBench? 
+- Introduction 
 - Step 1 - Codex: "Cursor on a pipeline" 
 - Step 2 - Prepare "workbenches" 
 - Step 3 - Connect recursively 
@@ -13,9 +13,9 @@
 
 Workbench Development is a new paradigm, which puts the developer as a leader of a fleet of AI Agents to write code, but in a structured manner that gives them full control over the outcomes. 
 
-### What is Agentic Workbench MCP?
+### What is Agentic Developer MCP?
 
-Agentic Workbench MCP (AgenticBench) is a server built on OpenAI's Codex, and connects it to an AI client like Cursor via MCP, and connects recursively to itself via MCPs.  
+Agentic Developer MCP is a server built on OpenAI's Codex, and connects it to an AI client like Cursor via MCP, and connects recursively to itself via MCPs.  
 
 It is built on OpenAI's Responses API, and works with local and hosted models to give developers full control and privacy over their models and code.  
 

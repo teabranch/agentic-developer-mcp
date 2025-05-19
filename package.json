@@ -1,0 +1,14 @@
+{
+  "name": "codex-mcp-wrapper",
+  "version": "1.0.0",
+  "description": "MCP server that wraps OpenAI Codex CLI and exposes MCP API.",
+  "main": "mcp-server.js",
+  "scripts": {
+    "start": "node mcp-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "body-parser": "^1.20.2",
+    "uuid": "^9.0.1"
+  }
+}

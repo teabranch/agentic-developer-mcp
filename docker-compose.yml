@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  codex-mcp-wrapper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - open-responses-server
+  open-responses-server:
+    image: ghcr.io/teabranch/open-responses-server:latest
+    environment:
+      - PROVIDER_URL=http://codex-mcp-wrapper:8080/v1/chat/completions
+    ports:
+      - "3000:3000"

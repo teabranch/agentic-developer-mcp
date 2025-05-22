@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp_server"
+version = "0.1.0"
+description = "MCP Server for Agentic Developer"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "anyio",
+    "click",
+    "pydantic>=2.0.0",
+    "mcp",
+    "uvicorn",
+]
+
+[project.scripts]
+mcp-server = "mcp_server:main"
+
+[tool.setuptools]
+packages = ["mcp_server"]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+line_length = 88

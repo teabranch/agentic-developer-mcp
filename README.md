@@ -41,8 +41,8 @@ AgenticBench allows tailoring environments for each agent to create their compon
 ### Step 2 - Prepare "workbenches"
 
 Workbenches are predefined folders with basic projects.  
- Each has the most empty, unchanging structure, which would give Codex an environment in which we create similar components. (Web app components, C# service classes, etc.).  
- Since the environment never changes, the prompts can be static and give the same results.  
+Each has the most empty, unchanging structure, which would give Codex an environment in which we create similar components. (Web app components, C# service classes, etc.).  
+Since the environment never changes, the prompts can be static and give the same results.  
 
 Each component is tested in this sterile environment and committed to a branch.
 

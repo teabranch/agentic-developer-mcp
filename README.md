@@ -1,14 +1,47 @@
-# Agentic Developer MCP Server
+# Codex MCP Wrapper
 
-An MCP server implementation that clones a Git repository and runs Codex on its contents.
+This project wraps OpenAI's Codex CLI as an MCP (Model Context Protocol) server, making it accessible through the TeaBranch/open-responses-server middleware.
+
+## Requirements
+
+- Node 22 (`nvm install 22.15.1 | nvm use 22.15.1`) required for Codex
 
 ## Overview
 
-This MCP server provides a tool for cloning a Git repository, optionally checking out a specific branch, focusing on a particular folder, and running Codex with a given request.
+The setup consists of three main components:
+
+1. **Codex CLI**: OpenAI's command-line interface for interacting with Codex.
+2. **MCP Wrapper Server**: A Node.js Express server that forwards MCP requests to Codex CLI and formats responses as MCP.
+3. **open-responses-server**: A middleware service that provides Responses API compatibility and MCP support.
 
 ## Installation
 
+### Using Docker (Recommended)
+
 ```bash
+# Clone this repository
+git clone https://github.com/yourusername/codex-mcp-wrapper.git
+cd codex-mcp-wrapper
+
+# Start the services
+./start.sh
+```
+
+This will start:
+- Codex MCP wrapper on port 8080
+- open-responses-server on port 3000
+
+### Manual Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Install Codex CLI globally
+npm install -g @openai/codex
+
+# Start the MCP server
+node mcp-server.js
 # Install the package in development mode
 pip install -e .
 ```

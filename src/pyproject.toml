@@ -19,6 +19,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "mcp",
     "uvicorn",
+    "fastmcp"
 ]
 
 [project.scripts]

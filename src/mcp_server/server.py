@@ -1,0 +1,70 @@
+"""
+FastMCP Echo Server
+"""
+
+from mcp.server.fastmcp import FastMCP
+import subprocess
+import tempfile
+import os
+import json
+
+# Create server
+mcp = FastMCP("Echo Server")
+
+
+@mcp.tool()
+def echo_tool(text: str) -> str:
+    """Echo the input text"""
+    return text
+
+
+@mcp.resource("echo://static")
+def echo_resource() -> str:
+    return "Echo!"
+
+
+@mcp.resource("echo://{text}")
+def echo_template(text: str) -> str:
+    """Echo the input text"""
+    return f"Echo: {text}"
+
+
+@mcp.prompt("echo")
+def echo_prompt(text: str) -> str:
+    return text
+
+
+@mcp.tool()
+def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> str:
+    """Clone the repo, read system prompt & agent config, then call codex CLI."""
+    temp_dir = tempfile.mkdtemp()
+    try:
+        subprocess.check_call(["git", "clone", repository, temp_dir])
+    except subprocess.CalledProcessError as e:
+        return f"Failed to clone {repository}: {e}"
+    # Determine working directory inside clone
+    work_dir = temp_dir if folder in ('', '/') else os.path.join(temp_dir, folder.lstrip('/'))
+    # Read system prompt
+    system_path = os.path.join(work_dir, ".agent", "system.md")
+    try:
+        with open(system_path, "r") as f:
+            system_prompt = f.read()
+    except Exception as e:
+        return f"Failed reading system prompt: {e}"
+    # Read agent config for modelId
+    agent_json = os.path.join(work_dir, ".agent", "agent.json")
+    try:
+        with open(agent_json, "r") as f:
+            config = json.load(f)
+        model_id = config.get("modelId")
+    except Exception as e:
+        return f"Failed reading agent config: {e}"
+    if not model_id:
+        return "modelId not found in agent.json"
+
+    # Call codex CLI
+    try:
+        output = subprocess.check_output(["codex", "--model", model_id, request], cwd=work_dir, text=True)
+    except subprocess.CalledProcessError as e:
+        return f"Codex CLI failed: {e}"
+    return output

@@ -102,6 +102,21 @@ Clones a repository, reads the system prompt from `.agent/system.md`, parses `mo
 }
 ```
 
+### MCPS Configuration
+
+Place a `mcps.json` file under the `.agent/` directory to register available MCP tools. Codex will load this configuration automatically.
+
+Example `.agent/mcps.json`:
+```json
+{
+  "mcpServers": {
+    "agentic-developer-mcp": {
+      "url": "..."
+    }
+  }
+}
+```
+
 ## Development
 
 This project uses the MCP Python SDK to implement an MCP server. The primary implementation is in `mcp_server/server.py`.

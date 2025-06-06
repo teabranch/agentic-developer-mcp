@@ -82,6 +82,26 @@ Clones a repository, checks out a specific branch (optional), navigates to a spe
 }
 ```
 
+### clone_and_write_prompt
+
+Clones a repository, reads the system prompt from `.agent/system.md`, parses `modelId` from `.agent/agent.json`, writes the request to a `.prompt` file, and invokes the Codex CLI with the extracted model.
+
+#### Parameters
+
+- `repository` (required): Git repository URL
+- `request` (required): Prompt text to run through Codex
+- `folder` (optional, default `/`): Subfolder within the repository to operate in
+
+#### Example
+
+```json
+{
+  "repository": "https://github.com/username/repo.git",
+  "folder": "src",
+  "request": "Analyze this code and suggest improvements"
+}
+```
+
 ## Development
 
 This project uses the MCP Python SDK to implement an MCP server. The primary implementation is in `mcp_server/server.py`.

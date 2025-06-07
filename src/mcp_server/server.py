@@ -34,12 +34,16 @@ def echo_prompt(text: str) -> str:
     return text
 
 
-@mcp.tool()
+@mcp.tool("When you need to shallow clone a Git repository, optionally limiting to a specific folder and its descendants, then read its system prompt and agent config and run Codex CLI accordingly.")
 def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> str:
     """Clone the repo, read system prompt & agent config, then call codex CLI."""
     temp_dir = tempfile.mkdtemp()
     try:
-        subprocess.check_call(["git", "clone", repository, temp_dir])
+        # shallow sparse clone only necessary data
+        subprocess.check_call(["git", "clone", "--depth", "1", "--filter=blob:none", "--sparse", repository, temp_dir])
+        # include only the specified folder if not root
+        if folder not in ('', '/'):
+            subprocess.check_call(["git", "-C", temp_dir, "sparse-checkout", "set", folder.lstrip('/')])
     except subprocess.CalledProcessError as e:
         return f"Failed to clone {repository}: {e}"
     # Determine working directory inside clone

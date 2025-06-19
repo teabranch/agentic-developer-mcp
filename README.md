@@ -1,3 +1,6 @@
+![image](https://github.com/user-attachments/assets/8afeab98-f30c-4c31-8c11-ab8557c16620)
+
+
 # Codex MCP Wrapper
 
 This project wraps OpenAI's Codex CLI as an MCP (Model Context Protocol) server, making it accessible through the TeaBranch/open-responses-server middleware.

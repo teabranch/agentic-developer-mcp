@@ -23,10 +23,10 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-server = "mcp_server:main"
+mcp-server = "mcp_server.server:main"
 
 [tool.setuptools]
-packages = ["mcp_server"]
+packages = {"mcp_server" = "mcp_server"}
 
 [tool.black]
 line-length = 88

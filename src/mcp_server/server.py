@@ -72,3 +72,19 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
     except subprocess.CalledProcessError as e:
         return f"Codex CLI failed: {e}"
     return output
+
+
+def main():
+    """Entry point for the MCP server"""
+    import asyncio
+    from mcp.server.stdio import stdio_server
+    
+    async def run_server():
+        async with stdio_server() as (read_stream, write_stream):
+            await mcp.run(read_stream, write_stream, mcp.create_initialization_options())
+    
+    asyncio.run(run_server())
+
+
+if __name__ == "__main__":
+    main()

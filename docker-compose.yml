@@ -1,18 +1,21 @@
-version: '3.8'
 services:
   codex-mcp-wrapper:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - MCP_PORT=${MCP_PORT:-8180}
     ports:
-      - "8180:8180"
+      - "${MCP_HOST_PORT:-8180}:${MCP_PORT:-8180}"
     environment:
-      - PORT=8180
+      - MCP_PORT=${MCP_PORT:-8180}
+    container_name: codex-mcp-wrapper-${INSTANCE_ID:-1}
   open-responses-server:
     image: ghcr.io/teabranch/open-responses-server:latest
     environment:
-      - PROVIDER_URL=http://codex-mcp-wrapper:8180/v1/chat/completions
+      - PROVIDER_URL=http://codex-mcp-wrapper-${INSTANCE_ID:-1}:${MCP_PORT:-8180}/v1/chat/completions
     ports:
-      - "3000:3000"
+      - "${RESPONSES_HOST_PORT:-3000}:3000"
     depends_on:
       - codex-mcp-wrapper
+    container_name: open-responses-server-${INSTANCE_ID:-1}

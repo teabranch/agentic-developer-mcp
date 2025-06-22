@@ -25,8 +25,9 @@ RUN cd src && uv pip install --system -e .
 COPY . .
 
 # Expose port for MCP server with running port from 8080 to 8180
-EXPOSE 8180
+ARG MCP_PORT=8180
+ENV MCP_PORT=${MCP_PORT}
+EXPOSE ${MCP_PORT}
 
-
-# Start the Python MCP server using uv with SSE transport on port 8180
-CMD ["uv", "run", "python", "-m", "mcp_server.server", "--transport", "sse", "--host", "0.0.0.0", "--port", "8180"]
+# Start the Python MCP server using uv with SSE transport on the specified port
+CMD ["/bin/bash", "-c", "uv run python -m mcp_server.server --transport sse --host 0.0.0.0 --port ${MCP_PORT}"]

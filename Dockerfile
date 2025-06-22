@@ -17,8 +17,8 @@ RUN pip install uv
 RUN npm install -g @openai/codex
 
 # Copy Python requirements and install
-COPY src/pyproject.toml ./src/
-COPY src/README.md ./src/
+# Copy src and all folders and files in it
+COPY src ./src/
 RUN cd src && uv pip install --system -e .
 
 # Copy application code
@@ -28,4 +28,4 @@ COPY . .
 EXPOSE 8080
 
 # Start the Python MCP server using uv
-CMD ["uv", "run", "--system", "python", "-m", "src.mcp_server.server"]
+CMD ["uv", "run", "python", "-m", "src.mcp_server.server"]

@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "MCP Server for Agentic Developer"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",

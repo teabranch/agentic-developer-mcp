@@ -5,13 +5,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8180:8180"
     environment:
-      - PORT=8080
+      - PORT=8180
   open-responses-server:
     image: ghcr.io/teabranch/open-responses-server:latest
     environment:
-      - PROVIDER_URL=http://codex-mcp-wrapper:8080/v1/chat/completions
+      - PROVIDER_URL=http://codex-mcp-wrapper:8180/v1/chat/completions
     ports:
       - "3000:3000"
     depends_on:

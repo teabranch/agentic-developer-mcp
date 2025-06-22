@@ -73,5 +73,22 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
         return f"Codex CLI failed: {e}"
     return output
 
+def main():
+    """Main entry point that supports command line arguments"""
+    import sys
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='MCP Server')
+    parser.add_argument('--transport', choices=['stdio', 'sse'], default='stdio', help='Transport type')
+    parser.add_argument('--host', default='localhost', help='Host to bind to')
+    parser.add_argument('--port', type=int, default=8000, help='Port to bind to')
+    
+    args = parser.parse_args()
+    
+    if args.transport == 'sse':
+        mcp.run(transport="sse", host=args.host, port=args.port)
+    else:
+        mcp.run()
+
 if __name__ == "__main__":
-    mcp.run()
+    main()

@@ -34,13 +34,16 @@ def echo_prompt(text: str) -> str:
     return text
 
 
-@mcp.tool("operate-developer")
+@mcp.tool("instruct-developer")
 def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> str:
     """When you need to shallow clone a Git repository, optionally limiting to a specific folder and its descendants, then read its system prompt and agent config and run Codex CLI accordingly."""
     temp_dir = tempfile.mkdtemp()
-    try:
-        # shallow sparse clone only necessary data
-        subprocess.check_call(["git", "clone", "--depth", "1", "--filter=blob:none", "--sparse", repository, temp_dir])
+    try:        # Clean up any existing directory
+        if os.path.exists(temp_dir):
+            subprocess.check_call(["rm", "-rf", temp_dir])
+            
+        # normal clone for testing - will optimize later
+        subprocess.check_call(["git", "clone", repository, temp_dir])
         # include only the specified folder if not root
         if folder not in ('', '/'):
             subprocess.check_call(["git", "-C", temp_dir, "sparse-checkout", "set", folder.lstrip('/')])
@@ -54,7 +57,13 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
         with open(system_path, "r") as f:
             system_prompt = f.read()
     except Exception as e:
-        return f"Failed reading system prompt: {e}"
+        # Return error message with existing items in the directory
+        items = os.listdir(work_dir)
+        if not items:
+            items = ["(empty directory)"]
+        # Return a formatted error message with existing items
+        latest_commit = subprocess.check_output(["git", "-C", work_dir, "rev-parse", "HEAD"], text=True).strip()
+        return f"Failed reading system prompt: {e}. \n Latest commit: {latest_commit} . \n items ({len(items)}) are:\n{'\n'.join(items)}" 
     # Read agent config for modelId
     agent_json = os.path.join(work_dir, ".agent", "agent.json")
     try:
@@ -62,15 +71,33 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
             config = json.load(f)
         model_id = config.get("modelId")
     except Exception as e:
-        return f"Failed reading agent config: {e}"
+        return f"Failed reading agent config {agent_json}: {e}"
     if not model_id:
         return "modelId not found in agent.json"
 
     # Call codex CLI
     try:
-        output = subprocess.check_output(["codex", "--model", model_id, request], cwd=work_dir, text=True)
+        env = os.environ.copy()
+        # Ensure non-interactive mode
+        env["CI"] = "true"
+        env["TERM"] = "dumb"
+        env["NO_COLOR"] = "1"
+        env["FORCE_COLOR"] = "0"
+        
+        # Use subprocess.run with explicit stream handling
+        result = subprocess.run(
+            ["codex", "--quiet", "--model", model_id], 
+            input=request,
+            cwd=work_dir, 
+            text=True, 
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True
+        )
+        output = result.stdout
     except subprocess.CalledProcessError as e:
-        return f"Codex CLI failed: {e}"
+        return f"Codex CLI failed: {e}\nStderr: {e.stderr if hasattr(e, 'stderr') else 'No stderr available'}"
     return output
 
 def main():

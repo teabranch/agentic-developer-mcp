@@ -1,5 +1,5 @@
 """
-FastMCP Echo Server
+FastMCP Agentic Developer MCP Server
 """
 
 from fastmcp import FastMCP
@@ -9,7 +9,7 @@ import os
 import json
 
 # Create server
-mcp = FastMCP("Echo Server")
+mcp = FastMCP("Agentic Developer MCP Server")
 
 
 @mcp.tool()
@@ -78,8 +78,8 @@ def main():
     import sys
     import argparse
     
-    parser = argparse.ArgumentParser(description='MCP Server')
-    parser.add_argument('--transport', choices=['stdio', 'sse'], default='stdio', help='Transport type')
+    parser = argparse.ArgumentParser(description='Agentic Developer MCP Server')
+    parser.add_argument('--transport', choices=['stdio', 'sse', 'http'], default='stdio', help='Transport type')
     parser.add_argument('--host', default='localhost', help='Host to bind to')
     parser.add_argument('--port', type=int, default=8000, help='Port to bind to')
     
@@ -87,6 +87,8 @@ def main():
     
     if args.transport == 'sse':
         mcp.run(transport="sse", host=args.host, port=args.port)
+    elif args.transport == 'http':
+        mcp.run(transport="http", host=args.host, port=args.port)
     else:
         mcp.run()
 

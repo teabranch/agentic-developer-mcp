@@ -2,8 +2,15 @@
 
 # Script to start multiple instances of the MCP server with different ports
 # Each instance gets its own container names and port assignments
+# Set SINGLE_INSTANCE=1 environment variable to start only one instance
 
 set -e
+
+# Check if single instance mode is requested
+if [ "${SINGLE_INSTANCE:-0}" = "1" ]; then
+    echo "Single instance mode requested. Starting one instance..."
+    exec ./start-single.sh
+fi
 
 # Default configuration
 DEFAULT_INSTANCES=3

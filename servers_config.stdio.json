@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agentic-developer-mcp-docker": {
+      "command": "python",
+      "args": [
+        "./src/mcp_server/server.py"
+      ],
+      "description": "Agentic Developer MCP Server running in Docker via stdio"
+    }
+  }
+}

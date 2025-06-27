@@ -34,9 +34,9 @@ def echo_prompt(text: str) -> str:
     return text
 
 
-@mcp.tool("When you need to shallow clone a Git repository, optionally limiting to a specific folder and its descendants, then read its system prompt and agent config and run Codex CLI accordingly.")
+@mcp.tool("operate-developer")
 def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> str:
-    """Clone the repo, read system prompt & agent config, then call codex CLI."""
+    """When you need to shallow clone a Git repository, optionally limiting to a specific folder and its descendants, then read its system prompt and agent config and run Codex CLI accordingly."""
     temp_dir = tempfile.mkdtemp()
     try:
         # shallow sparse clone only necessary data

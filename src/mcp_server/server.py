@@ -75,25 +75,26 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
     if not model_id:
         return "modelId not found in agent.json"
 
-    # Call codex CLI
+    # Call codex CLI via Docker
     try:
-        env = os.environ.copy()
-        # Ensure non-interactive mode
-        env["CI"] = "true"
-        env["TERM"] = "dumb"
-        env["NO_COLOR"] = "1"
-        env["FORCE_COLOR"] = "0"
+        # Get the OpenAI API key from environment
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         
-        # Use subprocess.run with explicit stream handling
-        result = subprocess.run(
-            ["codex", "--quiet", "--model", model_id], 
-            input=request,
-            cwd=work_dir, 
-            text=True, 
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True
+        # Use subprocess.run with Docker to run codex
+        result = subprocess.run([
+#            "docker", "run", "--rm",
+            "docker", "run", "--rm", "--tty",
+            "-v", f"{work_dir}:/workspace",
+            "-e", f"OPENAI_API_KEY={openai_api_key}",
+            "-e", "VOLUME_PATH=/workspace",
+            "codex-cli",
+            "-a", "full-auto", "--model", model_id
+        ], 
+        input=request,
+        text=True, 
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True
         )
         output = result.stdout
     except subprocess.CalledProcessError as e:

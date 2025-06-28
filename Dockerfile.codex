@@ -1,0 +1,44 @@
+FROM node:24-slim
+
+# Set overrideable environment variables
+ENV VOLUME_PATH=/workspace
+ENV OPENAI_API_KEY=""
+
+# Set environment variables to handle TTY issues
+ENV CI=true
+ENV TERM=dumb
+ENV NO_COLOR=1
+ENV FORCE_COLOR=0
+
+# Install necessary tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install nvm, Node.js 22.15.1, and codex
+SHELL ["/bin/bash", "-c"]
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash \
+    && export NVM_DIR="$HOME/.nvm" \
+    && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" \
+    && nvm install 22.15.1 \
+    && nvm use 22.15.1 \
+    && npm install -g @openai/codex
+
+# Set working directory to the volume path
+WORKDIR ${VOLUME_PATH}
+
+# Create entrypoint script
+RUN echo '#!/bin/bash' > /entrypoint.sh \
+    && echo 'export NVM_DIR="$HOME/.nvm"' >> /entrypoint.sh \
+    && echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /entrypoint.sh \
+    && echo 'nvm use 22.15.1' >> /entrypoint.sh \
+    && echo 'cd ${VOLUME_PATH}' >> /entrypoint.sh \
+    && echo 'export CI=true' >> /entrypoint.sh \
+    && echo 'export TERM=dumb' >> /entrypoint.sh \
+    && echo 'export NO_COLOR=1' >> /entrypoint.sh \
+    && echo 'export FORCE_COLOR=0' >> /entrypoint.sh \
+    && echo 'codex --quiet "$@"' >> /entrypoint.sh \
+    && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

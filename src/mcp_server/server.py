@@ -80,6 +80,7 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
         # Get the OpenAI API key from environment
         openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         
+        print(f"About to run codex CLI with model {model_id} in {work_dir} and request {request} using OpenAI API key: {len(openai_api_key)}")
         # Use subprocess.run with Docker to run codex
         result = subprocess.run([
 #            "docker", "run", "--rm",
@@ -88,9 +89,9 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
             "-e", f"OPENAI_API_KEY={openai_api_key}",
             "-e", "VOLUME_PATH=/workspace",
             "codex-cli",
-            "-a", "full-auto", "--model", model_id
+            "-a", "full-auto", "--model", model_id, request
         ], 
-        input=request,
+#        input=request,
         text=True, 
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

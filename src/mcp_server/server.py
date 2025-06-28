@@ -84,15 +84,23 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
         # Get the OpenAI API key from environment
         openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         
+        # Get the Git SSH key from environment
+        git_pat_key = os.environ.get("GIT_PAT_KEY", "")
+        git_username = os.environ.get("GIT_USERNAME", "")
         # If not found in environment, try to read from common locations
-        if not openai_api_key:
+        if not openai_api_key or not git_pat_key or not git_username:
             # Try reading from .env file in project root
             env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
             if os.path.exists(env_file):
                 with open(env_file, 'r') as f:
                     for line in f:
-                        if line.startswith('OPENAI_API_KEY='):
+                        if line.startswith('OPENAI_API_KEY=') and not openai_api_key:
                             openai_api_key = line.split('=', 1)[1].strip().strip('"\'')
+                        elif line.startswith('GIT_PAT_KEY=') and not git_pat_key:
+                            git_pat_key = line.split('=', 1)[1].strip().strip('"\'')
+                        elif line.startswith('GIT_USERNAME=') and not git_username:
+                            git_username = line.split('=', 1)[1].strip().strip('"\'')
+                        if openai_api_key and git_pat_key and git_username:
                             break
         
         print(f"About to run codex CLI with model {model_id} in {work_dir} and request {request} using OpenAI API key: {len(openai_api_key)} chars")
@@ -187,12 +195,44 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
                     "-m", f"Automated changes from Codex CLI - {branch_name} request: {request}"
                 ])
                 
-                # # Push the new branch
-                # subprocess.check_call([
-                #     "git", "-C", work_dir, "push", "origin", branch_name
-                # ])
-                
-                output += f"\n\nChanges saved to branch: {branch_name}"
+                # Setup PAT authentication if GIT_PAT_KEY is available
+                if git_pat_key:
+                    try:                      
+                        # Parse the repository URL to extract components
+                        # repository format: https://github.com/owner/repo.git
+                        if repository.startswith('https://'):
+                            # Extract host and path from repository URL
+                            url_parts = repository.replace('https://', '').split('/', 1)
+                            git_host = url_parts[0]
+                            repo_path = url_parts[1]
+                            
+                            # Create authenticated URL
+                            auth_url = f"https://{git_username}:{git_pat_key}@{git_host}/{repo_path}"
+                            
+                            # Set the remote URL with PAT authentication
+                            subprocess.check_call([
+                                "git", "-C", work_dir, "remote", "set-url", "origin", auth_url
+                            ])
+                            
+                            print(f"Set remote URL with PAT authentication for user: {git_username}")
+                        
+                        # Push the new branch
+                        subprocess.check_call([
+                            "git", "-C", work_dir, "push", "-u", "origin", branch_name
+                        ])
+                        
+                        output += f"\n\nChanges saved to branch: {branch_name} (using PAT authentication)"
+                        
+                    except subprocess.CalledProcessError as auth_error:
+                        output += f"\n\nWarning: Failed to set up PAT authentication username: {git_username} pat: {len(git_pat_key)}: {auth_error}"
+                        # Fallback to regular push
+                else:
+                    # Fallback to regular push (will likely fail without proper auth)
+                    subprocess.check_call([
+                        "git", "-C", work_dir, "push", "-u", "origin", branch_name
+                    ])
+                    
+                    output += f"\n\nChanges saved to branch: {branch_name}"
             else:
                 output += f"\n\nNo changes to commit. Branch {branch_name} created but not pushed."
                 

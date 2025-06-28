@@ -134,6 +134,73 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
             return f"Codex CLI failed with return code {result.returncode}\nStderr: {result.stderr}\nStdout: {result.stdout}"
             
         output = result.stdout
+        
+        # Create branch with unix timestamp, commit all changes and push
+        try:
+            import time
+            unix_timestamp = int(time.time())
+            branch_name = f"automated_{unix_timestamp}"
+            
+            # Check git status first
+            git_check = subprocess.run(
+                ["git", "-C", work_dir, "status"],
+                capture_output=True,
+                text=True
+            )
+            print(f"Git status check: return code {git_check.returncode}")
+            print(f"Git status stdout: {git_check.stdout}")
+            print(f"Git status stderr: {git_check.stderr}")
+            
+            if git_check.returncode != 0:
+                output += f"\n\nWarning: Git repository not properly initialized or accessible. Status check failed: {git_check.stderr}"
+                return output
+            
+            # Create and checkout new branch
+            subprocess.check_call(["git", "-C", work_dir, "checkout", "-b", branch_name])
+            
+            # Add all changes with better error handling
+            add_result = subprocess.run(
+                ["git", "-C", work_dir, "add", "."],
+                capture_output=True,
+                text=True
+            )
+            
+            if add_result.returncode != 0:
+                output += f"\n\nWarning: Failed to add files to git. Return code: {add_result.returncode}"
+                output += f"\nStdout: {add_result.stdout}"
+                output += f"\nStderr: {add_result.stderr}"
+                output += f"\nWorking directory: {work_dir}"
+                output += f"\nDirectory contents: {os.listdir(work_dir) if os.path.exists(work_dir) else 'N/A'}"
+                return output
+            
+            # Check if there are any changes to commit
+            git_status = subprocess.run(
+                ["git", "-C", work_dir, "status", "--porcelain"],
+                capture_output=True,
+                text=True
+            )
+            
+            if git_status.stdout.strip():  # There are changes to commit
+                # Commit changes
+                subprocess.check_call([
+                    "git", "-C", work_dir, "commit", 
+                    "-m", f"Automated changes from Codex CLI - {branch_name} request: {request}"
+                ])
+                
+                # # Push the new branch
+                # subprocess.check_call([
+                #     "git", "-C", work_dir, "push", "origin", branch_name
+                # ])
+                
+                output += f"\n\nChanges saved to branch: {branch_name}"
+            else:
+                output += f"\n\nNo changes to commit. Branch {branch_name} created but not pushed."
+                
+        except subprocess.CalledProcessError as git_error:
+            output += f"\n\nWarning: Failed to save changes to git: {git_error}"
+        except Exception as git_exception:
+            output += f"\n\nWarning: Unexpected error during git operations: {git_exception}"
+            
     except subprocess.TimeoutExpired as e:
         return f"Codex CLI timed out after 10 minutes: {e}"
     except subprocess.CalledProcessError as e:

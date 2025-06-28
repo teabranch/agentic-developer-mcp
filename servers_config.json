@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "agentic-developer-mcp-docker": {
+      "command": "uv",
+      "args": [
+        "uv run python -m src.mcp_server.server" 
+      ],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
+      },
+      "description": "Agentic Developer MCP Server running in Docker via stdio"
+    }
+  }
+}

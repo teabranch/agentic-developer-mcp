@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "agentic-developer-mcp-docker": {
+      "command": "curl",
+      "args": [
+        "-X", "POST",
+        "-H", "Content-Type: application/json",
+        "-d", "@-",
+        "http://localhost:8180/mcp"
+      ],
+      "description": "Agentic Developer MCP Server running in Docker",
+      "transport": "http"
+    },
+    "agentic-developer-mcp-local": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server.server"],
+      "cwd": "/workspaces/agentic-developer-mcp",
+      "env": {
+        "PYTHONPATH": "/workspaces/agentic-developer-mcp"
+      },
+      "description": "Agentic Developer MCP Server running locally via stdio"
+    }
+  }
+}

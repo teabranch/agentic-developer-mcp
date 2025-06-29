@@ -319,6 +319,49 @@ def clone_and_write_prompt(repository: str, request: str, componentName: str = "
         return f"Unexpected error running Codex CLI: {e}"
     return output
 
+@mcp.tool("fetch-component")
+def fetch_components(repository: str, branch: str) -> str:
+    """Use this after instructing a developer for results and given, or if you already know the repository and branch of where a component was created. The result is a git patch of the last commit."""
+    temp_dir = tempfile.mkdtemp()
+    try:
+        # Clean up any existing directory
+        if os.path.exists(temp_dir):
+            subprocess.check_call(["rm", "-rf", temp_dir])
+        
+        # Clone the repository
+        subprocess.check_call(["git", "clone", repository, temp_dir])
+        
+        # Checkout the specified branch
+        subprocess.check_call(["git", "-C", temp_dir, "checkout", branch])
+        
+        # Get the last commit hash
+        last_commit = subprocess.check_output(
+            ["git", "-C", temp_dir, "rev-parse", "HEAD"],
+            text=True
+        ).strip()
+        
+        # Create a patch for the last commit
+        patch_dir = os.path.join(temp_dir, "patches")
+        os.makedirs(patch_dir, exist_ok=True)
+        subprocess.check_call(["git", "-C", temp_dir, "format-patch", "-1", last_commit, "-o", patch_dir])
+        
+        # Find the actual patch file created by git format-patch
+        patch_files = [f for f in os.listdir(patch_dir) if f.endswith('.patch')]
+        if not patch_files:
+            return f"No patch file created for commit {last_commit}"
+        
+        patch_file_path = os.path.join(patch_dir, patch_files[0])
+        with open(patch_file_path, "r") as f:
+            patch_content = f.read()
+        
+    except subprocess.CalledProcessError as e:
+        return f"Failed to fetch component from {repository} at branch {branch}: {e}"
+    except Exception as e:
+        return f"Unexpected error fetching component: {e}"
+    
+    return patch_content
+
+
 def main():
     """Main entry point that supports command line arguments"""
     import sys

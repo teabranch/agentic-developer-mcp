@@ -37,9 +37,10 @@ def echo_prompt(text: str) -> str:
 
 
 @mcp.tool("instruct-developer")
-def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> str:
-    """When you need to shallow clone a Git repository, optionally limiting to a specific folder and its descendants, then read its system prompt and agent config and run Codex CLI accordingly."""
-    temp_dir = tempfile.mkdtemp()
+def clone_and_write_prompt(repository: str, request: str, componentName: str = "/") -> str:
+    """When you need to shallow clone a Git repository, optionally limiting to a specific componentName's folder and its descendants, then read its system prompt and agent config and run Codex CLI accordingly."""
+    #componentName is most right part of componentName
+    temp_dir = tempfile.mkdtemp() + componentName.lstrip('/')
     try:        
         # Clean up any existing directory
         if os.path.exists(temp_dir):
@@ -193,7 +194,7 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
         try:
             import time
             unix_timestamp = int(time.time())
-            branch_name = f"automated_{unix_timestamp}"
+            branch_name = f"automated_{componentName}_{unix_timestamp}"
             
             # Check git status first
             git_check = subprocess.run(

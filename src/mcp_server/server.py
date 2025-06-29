@@ -7,6 +7,8 @@ import subprocess
 import tempfile
 import os
 import json
+import pwd
+import grp
 
 # Create server
 mcp = FastMCP("Agentic Developer MCP Server")
@@ -44,17 +46,18 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
             subprocess.check_call(["rm", "-rf", temp_dir])
             
         # Clone the repository
-        if folder not in ('', '/'):
-            # Use sparse-checkout for specific folder
-            subprocess.check_call(["git", "clone", "--filter=blob:none", "--sparse", repository, temp_dir])
-            subprocess.check_call(["git", "-C", temp_dir, "sparse-checkout", "set", folder.lstrip('/')])
-        else:
-            # Full clone for root folder
-            subprocess.check_call(["git", "clone", repository, temp_dir])
+        # if folder not in ('', '/'):
+        #     # Use sparse-checkout for specific folder
+        #     subprocess.check_call(["git", "clone", "--filter=blob:none", "--sparse", repository, temp_dir])
+        #     subprocess.check_call(["git", "-C", temp_dir, "sparse-checkout", "set", folder.lstrip('/')])
+        # else:
+        # Full clone for root folder
+        subprocess.check_call(["git", "clone", repository, temp_dir])
     except subprocess.CalledProcessError as e:
         return f"Failed to clone {repository}: {e}"
     # Determine working directory inside clone
-    work_dir = temp_dir if folder in ('', '/') else os.path.join(temp_dir, folder.lstrip('/'))
+    #work_dir = temp_dir if folder in ('', '/') else os.path.join(temp_dir, folder.lstrip('/'))
+    work_dir = temp_dir  # Use the root of the cloned repository
     # Read system prompt
     system_path = os.path.join(work_dir, ".agent", "system.md")
     try:
@@ -110,14 +113,22 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
             return "OPENAI_API_KEY environment variable is not set. Please ensure it's exported in your shell or add it to the MCP server config 'env' section. Current env vars: " + str(list(os.environ.keys()))
         
         # Build Docker command - keep --tty since codex needs it
+        # Add --user flag to run container with host user's UID:GID to avoid permission issues
         # Works: docker run --rm --tty -v /tmp/tmp342f6goc:/workspace -e OPENAI_API_KEY=${OPENAI_API_KEY} -e VOLUME_PATH=/workspace codex-cli -a full-auto --model gpt-4o "Write hello world app"
+        
+        # Get current user's UID and GID to avoid permission issues
+        import pwd
+        import grp
+        current_uid = os.getuid()
+        current_gid = os.getgid()
+        
         docker_cmd = [
             "docker", "run", "--rm", "--tty",
             "-v", f"{work_dir}:/workspace",
             "-e", f"OPENAI_API_KEY={openai_api_key}",
             "-e", "VOLUME_PATH=/workspace",
             "codex-cli",
-            "-a", "full-auto", "--model", model_id, request
+            "-a", "full-auto", "--model", model_id, "system: " + system_prompt + ";; user: " + request
         ]
         
         print(f"Running Docker command: {' '.join(docker_cmd)}")
@@ -142,6 +153,41 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
             return f"Codex CLI failed with return code {result.returncode}\nStderr: {result.stderr}\nStdout: {result.stdout}"
             
         output = result.stdout
+        # Fix permissions on all files in the work directory after Docker execution
+        # Use sudo if available as fallback for permission issues
+        try:
+            print(f"Fixing permissions on files in {work_dir}")
+            
+            # First try with regular chmod
+            chmod_result = subprocess.run([
+                "chmod", "-R", "755", work_dir
+            ], capture_output=True, text=True)
+            
+            if chmod_result.returncode != 0:
+                print(f"Regular chmod failed: {chmod_result.stderr}")
+                # Try with sudo as fallback
+                sudo_result = subprocess.run([
+                    "sudo", "chmod", "-R", "755", work_dir
+                ], capture_output=True, text=True)
+                
+                if sudo_result.returncode != 0:
+                    print(f"Sudo chmod also failed: {sudo_result.stderr}")
+                    # Try to fix ownership first, then permissions
+                    subprocess.run([
+                        "sudo", "chown", "-R", f"{current_uid}:{current_gid}", work_dir
+                    ], capture_output=True, text=True)
+                    
+                    subprocess.run([
+                        "chmod", "-R", "755", work_dir
+                    ], capture_output=True, text=True)
+                    
+            print("Permissions fixed successfully")
+        except subprocess.CalledProcessError as perm_error:
+            print(f"Warning: Failed to fix permissions: {perm_error}")
+            output += f"\n\nWarning: Failed to fix file permissions: {perm_error}"
+        except Exception as perm_exception:
+            print(f"Warning: Unexpected error fixing permissions: {perm_exception}")
+            output += f"\n\nWarning: Unexpected error fixing permissions: {perm_exception}"
         
         # Create branch with unix timestamp, commit all changes and push
         try:
@@ -174,12 +220,35 @@ def clone_and_write_prompt(repository: str, request: str, folder: str = "/") -> 
             )
             
             if add_result.returncode != 0:
-                output += f"\n\nWarning: Failed to add files to git. Return code: {add_result.returncode}"
-                output += f"\nStdout: {add_result.stdout}"
-                output += f"\nStderr: {add_result.stderr}"
-                output += f"\nWorking directory: {work_dir}"
-                output += f"\nDirectory contents: {os.listdir(work_dir) if os.path.exists(work_dir) else 'N/A'}"
-                return output
+                print(f"Git add failed, trying to fix permissions and retry...")
+                # Try to fix any remaining permission issues before git operations
+                try:
+                    subprocess.run([
+                        "sudo", "chown", "-R", f"{current_uid}:{current_gid}", work_dir
+                    ], capture_output=True, text=True, check=False)
+                    
+                    # Retry git add
+                    add_retry = subprocess.run(
+                        ["git", "-C", work_dir, "add", "."],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if add_retry.returncode != 0:
+                        output += f"\n\nWarning: Failed to add files to git even after permission fix. Return code: {add_retry.returncode}"
+                        output += f"\nStdout: {add_retry.stdout}"
+                        output += f"\nStderr: {add_retry.stderr}"
+                        output += f"\nWorking directory: {work_dir}"
+                        output += f"\nDirectory contents: {os.listdir(work_dir) if os.path.exists(work_dir) else 'N/A'}"
+                        return output
+                except Exception as fix_error:
+                    output += f"\n\nWarning: Failed to add files to git. Return code: {add_result.returncode}"
+                    output += f"\nStdout: {add_result.stdout}"
+                    output += f"\nStderr: {add_result.stderr}"
+                    output += f"\nPermission fix error: {fix_error}"
+                    output += f"\nWorking directory: {work_dir}"
+                    output += f"\nDirectory contents: {os.listdir(work_dir) if os.path.exists(work_dir) else 'N/A'}"
+                    return output
             
             # Check if there are any changes to commit
             git_status = subprocess.run(
